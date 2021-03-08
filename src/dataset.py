@@ -1,9 +1,9 @@
 import csv
 import os
 from enum import Enum
-from tqdm import tqdm
-
 from statistics import mean, stdev
+
+import cv2 as cv
 
 class XRAYTYPE(Enum):
     ELBOW='XR_ELBOW'
@@ -49,29 +49,46 @@ def path_join(prefix, dirs):
         dirs.pop(0)
         return path_join(prefix, dirs)
 
-if __name__=="__main__":
-    data_dir = os.path.join(os.getcwd(), 'data')
-    dataset_type = 'train'
-    # dataset_type = 'valid'
-    label_file_path = os.path.join(data_dir, 'MURA-v1.1', dataset_type+'_labeled_studies.csv')
-    image_file_path = os.path.join(data_dir, 'MURA-v1.1', dataset_type+'_image_paths.csv')
-    lengths = []
-    xray_type = XRAYTYPE.SHOULDER
-    for row in tqdm(readcsv(label_file_path,xray_type)):
+def get_study_image_paths(data_dir, label_file_path, image_file_path, x_ray_type=None):
+    num_images = []
+    data = []
+    for row in readcsv(label_file_path,xray_type):
         split = row[0].split('/')
         patient = split[3]
         study = split[4]
         image_names = get_image_names_in_study(patient, study, image_file_path, xray_type)
-        data = {
+        yield {
             'path': path_join(data_dir, split),
             'label': 1 if row[1]=='1' else -1,
             'img_names': image_names
-        }
-        if len(data['img_names']) < 1:
-            print(data)
-        lengths.append(len(data['img_names']))
-        # print(data)
-    print("Max: ", max(lengths))
-    print("Mean: ", mean(lengths))
-    print("StdDev: ", stdev(lengths))
+        } 
+        num_images.append(len(image_names))
+    print(max(num_images),  mean(num_images), stdev(num_images))
+
+def get_images(data: dict):
+    imgs = []
+    for img_path in data['img_names']:
+        img = cv.imread(os.path.join(data['path'], img_path), cv.IMREAD_GRAYSCALE)
+        imgs.append(img)
+    return imgs, data['label']
+
+def extract_images(data):
+    for instance in data:
+        yield get_images(instance)
+
+def load_ds(dataset_type:str = 'train', xray_type: XRAYTYPE = None):
+    data_dir = os.path.join(os.getcwd(), 'data')
+    label_file_path = os.path.join(data_dir, 'MURA-v1.1', dataset_type+'_labeled_studies.csv')
+    image_file_path = os.path.join(data_dir, 'MURA-v1.1', dataset_type+'_image_paths.csv')
+    return extract_images(get_study_image_paths(data_dir, label_file_path, image_file_path, xray_type))
+
+if __name__=="__main__":
+    
+    # dataset_type = 'train' 
+    dataset_type = 'valid'
+    xray_type = XRAYTYPE.ELBOW
+
+    ds = load_ds(dataset_type, xray_type)
+    for data, label in ds:
+        print(len(data), label)
     
