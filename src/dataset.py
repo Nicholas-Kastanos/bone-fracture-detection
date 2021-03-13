@@ -49,10 +49,12 @@ def path_join(prefix, dirs):
         dirs.pop(0)
         return path_join(prefix, dirs)
 
-def get_study_image_paths(data_dir, label_file_path, image_file_path, x_ray_type=None):
+max_images = 0
+
+def get_study_image_paths(data_dir, label_file_path, image_file_path, xray_type=None):
     num_images = []
     data = []
-    for row in readcsv(label_file_path,xray_type):
+    for row in readcsv(label_file_path, xray_type):
         split = row[0].split('/')
         patient = split[3]
         study = split[4]
@@ -63,6 +65,8 @@ def get_study_image_paths(data_dir, label_file_path, image_file_path, x_ray_type
             'img_names': image_names
         } 
         num_images.append(len(image_names))
+    global max_images
+    max_images = max(num_images)
     print(max(num_images),  mean(num_images), stdev(num_images))
 
 def get_images(data: dict):
@@ -76,19 +80,99 @@ def extract_images(data):
     for instance in data:
         yield get_images(instance)
 
-def load_ds(dataset_type:str = 'train', xray_type: XRAYTYPE = None):
+def get_image_generator(dataset_type:str = 'train', xray_type: XRAYTYPE = None):
     data_dir = os.path.join(os.getcwd(), 'data')
     label_file_path = os.path.join(data_dir, 'MURA-v1.1', dataset_type+'_labeled_studies.csv')
     image_file_path = os.path.join(data_dir, 'MURA-v1.1', dataset_type+'_image_paths.csv')
     return extract_images(get_study_image_paths(data_dir, label_file_path, image_file_path, xray_type))
+    
+def fold():
+    # ds_stats = {
+    #     'train': {
+    #         XRAYTYPE.ELBOW: {
+    #             'max': 7,
+    #             'mean': 2.8112884834663627,
+    #             'stdev': 0.9368346433086429
+    #         },
+    #         XRAYTYPE.FINGER: {
+    #             'max': ,
+    #             'mean': ,
+    #             'stdev': 
+    #         },
+    #         XRAYTYPE.FOREARM: {
+    #             'max': ,
+    #             'mean': ,
+    #             'stdev': 
+    #         },
+    #         XRAYTYPE.HAND: {
+    #             'max': ,
+    #             'mean': ,
+    #             'stdev': 
+    #         },
+    #         XRAYTYPE.HUMERUS: {
+    #             'max': ,
+    #             'mean': ,
+    #             'stdev': 
+    #         },
+    #         XRAYTYPE.SHOULDER: {
+    #             'max': ,
+    #             'mean': ,
+    #             'stdev': 
+    #         },
+    #         XRAYTYPE.WRIST: {
+    #             'max': ,
+    #             'mean': ,
+    #             'stdev': 
+    #         }
+    #     },
+    #     'valid': {
+    #         XRAYTYPE.ELBOW: {
+    #             'max': 8,
+    #             'mean': 2.9430379746835444,
+    #             'stdev': 1.1957657295964794
+    #         },
+    #         XRAYTYPE.FINGER: {
+    #             'max': 5,
+    #             'mean': 2.6342857142857143,
+    #             'stdev': 0.8795057576095273
+    #         },
+    #         XRAYTYPE.FOREARM: {
+    #             'max': 10,
+    #             'mean': 2.263157894736842,
+    #             'stdev': 0.903651991559848
+    #         },
+    #         XRAYTYPE.HAND: {
+    #             'max': 5,
+    #             'mean': 2.754491017964072,
+    #             'stdev': 0.5752638563623733
+    #         },
+    #         XRAYTYPE.HUMERUS: {
+    #             'max': 5,
+    #             'mean': 2.1333333333333333,
+    #             'stdev': 0.5436197090427292
+    #         },
+    #         XRAYTYPE.SHOULDER: {
+    #             'max': 5,
+    #             'mean': 2.902061855670103,
+    #             'stdev': 1.0459375526434163
+    #         },
+    #         XRAYTYPE.WRIST: {
+    #             'max': 5,
+    #             'mean': 2.780590717299578,
+    #             'stdev': 0.8650235553263267
+    #         }
+    #     }
+    # }
+    pass
 
 if __name__=="__main__":
     
-    # dataset_type = 'train' 
-    dataset_type = 'valid'
+    dataset_type = 'train' 
+    # dataset_type = 'valid'
     xray_type = XRAYTYPE.ELBOW
-
-    ds = load_ds(dataset_type, xray_type)
+    print(max_images)
+    ds = get_image_generator(dataset_type, xray_type)
     for data, label in ds:
         print(len(data), label)
+    print(max_images)
     
