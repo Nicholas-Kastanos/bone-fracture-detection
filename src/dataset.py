@@ -61,13 +61,13 @@ def get_study_image_paths(data_dir, label_file_path, image_file_path, xray_type=
         image_names = get_image_names_in_study(patient, study, image_file_path, xray_type)
         yield {
             'path': path_join(data_dir, split),
-            'label': 1 if row[1]=='1' else -1,
+            'label': 1 if row[1]=='1' else 0,
             'img_names': image_names
         } 
         num_images.append(len(image_names))
     global max_images
     max_images = max(num_images)
-    print(max(num_images),  mean(num_images), stdev(num_images))
+    # print(max(num_images),  mean(num_images), stdev(num_images))
 
 def get_images(data: dict):
     imgs = []
@@ -100,66 +100,42 @@ def fold():
     #             'stdev': 
     #         },
     #         XRAYTYPE.FOREARM: {
-    #             'max': ,
-    #             'mean': ,
-    #             'stdev': 
+    #             'max': 7,
     #         },
     #         XRAYTYPE.HAND: {
     #             'max': ,
-    #             'mean': ,
-    #             'stdev': 
     #         },
     #         XRAYTYPE.HUMERUS: {
     #             'max': ,
-    #             'mean': ,
-    #             'stdev': 
     #         },
     #         XRAYTYPE.SHOULDER: {
     #             'max': ,
-    #             'mean': ,
-    #             'stdev': 
     #         },
     #         XRAYTYPE.WRIST: {
     #             'max': ,
-    #             'mean': ,
-    #             'stdev': 
     #         }
     #     },
     #     'valid': {
     #         XRAYTYPE.ELBOW: {
     #             'max': 8,
-    #             'mean': 2.9430379746835444,
-    #             'stdev': 1.1957657295964794
     #         },
     #         XRAYTYPE.FINGER: {
     #             'max': 5,
-    #             'mean': 2.6342857142857143,
-    #             'stdev': 0.8795057576095273
     #         },
     #         XRAYTYPE.FOREARM: {
     #             'max': 10,
-    #             'mean': 2.263157894736842,
-    #             'stdev': 0.903651991559848
     #         },
     #         XRAYTYPE.HAND: {
     #             'max': 5,
-    #             'mean': 2.754491017964072,
-    #             'stdev': 0.5752638563623733
     #         },
     #         XRAYTYPE.HUMERUS: {
     #             'max': 5,
-    #             'mean': 2.1333333333333333,
-    #             'stdev': 0.5436197090427292
     #         },
     #         XRAYTYPE.SHOULDER: {
     #             'max': 5,
-    #             'mean': 2.902061855670103,
-    #             'stdev': 1.0459375526434163
     #         },
     #         XRAYTYPE.WRIST: {
     #             'max': 5,
-    #             'mean': 2.780590717299578,
-    #             'stdev': 0.8650235553263267
     #         }
     #     }
     # }
