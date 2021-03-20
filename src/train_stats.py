@@ -94,7 +94,7 @@ if __name__=="__main__":
     fig_dir = os.path.join(os.getcwd(), 'imgs', start_time.strftime('%d %m %Y %H-%M-%S')+ ' f1_train')
     grid_fig_dir = os.path.join(fig_dir, 'grid')
     os.makedirs(grid_fig_dir, exist_ok=True)
-    plt.savefig(os.path.join(fig_dir, 'final.png'), bbox_inches='tight')
+    plt.savefig(os.path.join(grid_fig_dir, 'final.png'), bbox_inches='tight')
 
     print("Running BO")
     bounds = np.array([[C_start, C_end], [nf_start, nf_end]])
