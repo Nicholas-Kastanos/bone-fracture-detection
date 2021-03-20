@@ -130,6 +130,6 @@ def _plot_loss_2d(first_param_grid, second_param_grid, sampled_params, sampled_l
     ax2.set_ylabel("gamma")
 
     if optimum is not None:
-        ax2.scatter(optimum[0], optimum[1], marker='*', c='gold', s=150)
+        ax2.scatter(optimum[0], optimum[1], marker='*', c='red', s=150)
 
     return fig, ax1, ax2

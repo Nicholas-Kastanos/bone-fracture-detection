@@ -1,10 +1,14 @@
 import sys
+import os
+import gc
 
 import cv2 as cv
 import numpy as np
 from scipy.ndimage import grey_closing, grey_opening
+from sklearn.decomposition import PCA
 
-from dataset import XRAYTYPE, get_image_generator
+import utils
+from dataset import XRAYTYPE, get_image_generator, get_max_images_per_study
 
 
 def blur(img):
@@ -117,7 +121,7 @@ def fill_features(features_arr, length: int):
 def max_len(x):
     return len(x[0])
 
-def process_ds(generator, max_length=None):
+def _calc_features(generator, n_SIFT_features=100):
     features = []
     for imgs, label in generator:
         features_arr = []
@@ -127,6 +131,36 @@ def process_ds(generator, max_length=None):
                 features_arr.append(f)
         if len(features_arr)>0:
             features.append((features_arr, label))
+    return features
+
+def _apply_or_fit_PCA(features, pca):
+    # Combine into a single array, but remember which study the images belonged to.
+    num_images = []
+    labels = []
+    image_features = []
+    for f, l in features:
+        labels.append(l)
+        num_images.append(len(f))
+        image_features = image_features + f
+
+    # Apply or fit PCA
+    if not isinstance(pca, PCA):
+        pca = PCA(n_components=pca)
+        pca.fit(image_features)
+    image_features = pca.transform(image_features)
+
+    # Undo concatenation
+    features = []
+    for num in num_images:
+        study_features = []
+        for _ in range(num):
+            study_features.append(image_features[0])
+            image_features = image_features[1:]
+        features.append((study_features, labels[0]))
+        labels.pop(0)
+    return features, pca
+
+def _concat_feature_vectors(features, max_length=None):
     if max_length is None:
         max_length = max_len(max(features, key=max_len))
     full_features = []
@@ -135,11 +169,99 @@ def process_ds(generator, max_length=None):
         ff = fill_features(f, max_length)
         full_features.append(ff)
         labels.append(l)
-    full_features = np.asarray(full_features)
-    labels = np.array(labels)
-    return full_features, labels, max_length
+    return np.asarray(full_features), np.array(labels)
+
+# def _load_ds(ds_type, xray_type, pca, n_SIFT_features):
+
+def _files_exist(files):
+    return all(os.path.isfile(f) for f in files)
+
+def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
+    # Check if ds with correct type, PCA amount, and features exists
+    train_ds_X_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'train_ds_X_pca-'+str(n_pca)+'_sift-'+str(n_SIFT_features)+'.pkl')
+    train_ds_Y_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'train_ds_Y_pca-'+str(n_pca)+'_sift-'+str(n_SIFT_features)+'.pkl')
+    valid_ds_X_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_ds_X_pca-'+str(n_pca)+'_sift-'+str(n_SIFT_features)+'.pkl')
+    valid_ds_Y_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_ds_Y_pca-'+str(n_pca)+'_sift-'+str(n_SIFT_features)+'.pkl')
+    if _files_exist([train_ds_X_path, train_ds_Y_path, valid_ds_X_path, valid_ds_Y_path]):
+    # If both files exist, use file contents.
+        return utils.read_pickle(train_ds_X_path), \
+            utils.read_pickle(train_ds_Y_path), \
+            utils.read_pickle(valid_ds_X_path), \
+            utils.read_pickle(valid_ds_Y_path)
+    else:
+    # If either file does not exist, recreate all.
+        ## Check if ds with correct type and features exists
+        train_features_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'train_features_sift-'+str(n_SIFT_features)+'.pkl')
+        valid_features_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_features_sift-'+str(n_SIFT_features)+'.pkl')
+        if _files_exist([train_features_path, valid_features_path]):
+        # If both files exist, use files to make ds files.
+            max_features_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'max_images.pkl')
+            if _files_exist([max_features_path]):
+                max_images = utils.read_pickle(max_features_path)
+            else:
+                max_images = get_max_images_per_study(xray_type)
+                utils.write_pickle(max_images, max_features_path)
+
+            train_features = utils.read_pickle(train_features_path)
+            pca=None
+            if n_pca is not None: # We want to do PCA on a per image basis
+                train_features, pca = _apply_or_fit_PCA(train_features, n_pca)
+            train_ds_X, train_ds_Y = _concat_feature_vectors(train_features, max_images)
+            utils.write_pickle(train_ds_X, train_ds_X_path)
+            utils.write_pickle(train_ds_Y, train_ds_Y_path)
+            del train_ds_X
+            del train_ds_Y
+            gc.collect()
+
+            valid_features = utils.read_pickle(valid_features_path)
+            if n_pca is not None: # We want to do PCA on a per image basis (If pca happened for train_ds, pca will have the PCA object)
+                valid_features, _ = _apply_or_fit_PCA(valid_features, pca)
+            valid_ds_X, valid_ds_Y = _concat_feature_vectors(valid_features, max_images)
+            utils.write_pickle(valid_ds_X, valid_ds_X_path)
+            utils.write_pickle(valid_ds_Y, valid_ds_Y_path)
+            del valid_ds_X
+            del valid_ds_Y
+            gc.collect()
+            return load_ds(xray_type, n_pca, n_SIFT_features)
+        else:
+        # If either file does not exist, recreate all.
+            ### Check if ds with correct type exists
+            train_images_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'train_images.pkl')
+            valid_images_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_images.pkl')
+            if _files_exist([train_images_path, valid_images_path]):
+            # If both files exist, use files to create feature files.
+                train_images = utils.read_pickle(train_images_path)
+                train_features = _calc_features(train_images, n_SIFT_features)
+                utils.write_pickle(train_features, train_features_path)
+                del train_images
+                del train_features
+                gc.collect()
+                valid_images = utils.read_pickle(valid_images_path)
+                valid_features = _calc_features(valid_images, n_SIFT_features)
+                utils.write_pickle(valid_features, valid_features_path)
+                del valid_images
+                del valid_features,
+                gc.collect()
+                return load_ds(xray_type, n_pca, n_SIFT_features) 
+            else:
+            # If either file does not exist, recreate it.
+                train_images = list(get_image_generator('train', xray_type))
+                utils.write_pickle(train_images, train_images_path)
+                del train_images
+                gc.collect()
+                valid_images = list(get_image_generator('valid', xray_type))
+                utils.write_pickle(valid_images, valid_images_path)
+                del valid_images
+                gc.collect()
+                return load_ds(xray_type, n_pca, n_SIFT_features)
+                
+
+# def process_ds(generator, max_length=None, pca=None):
+#     features = _calc_features(generator=generator)
+#     if pca is not None: # We want to do PCA on a per image basis
+#         features, pca = _apply_or_fit_PCA(features, pca)
+#     full_features, labels = _concat_feature_vectors(features, max_length)
+#     return full_features, labels, max_length, pca
 
 if __name__ == "__main__":
-    gen = get_image_generator('train' , xray_type=XRAYTYPE.FOREARM)
-    x, y, max_length = process_ds(gen)
-    print(x.shape, y.shape, max_length)
+    train_X, train_Y, valid_X, valid_Y = load_ds(XRAYTYPE.FOREARM, 50, 100)
