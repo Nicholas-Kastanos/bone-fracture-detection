@@ -1,0 +1,57 @@
+\documentclass{IEEEtran}
+
+\usepackage{amsmath}
+\usepackage{cite}
+\usepackage{graphicx}
+
+\begin{document}
+	
+	\title{Detection of Bone Abnormalities using Non-specific Features}
+	\author{\IEEEauthorblockN{Nicholas Kastanos (nk569)}\\
+		\IEEEauthorblockA{
+			L248 Computer Vision\\
+			30 March 2021}
+	}
+	
+	\maketitle
+	
+	\begin{abstract}
+		This is an abstract
+	\end{abstract}
+
+	\section{Introduction}
+	
+	\section{Literature Review}
+	
+	\subsection{Previous Work}
+	
+	Due to the myriad of available medical imaging technologies available, bone structure abnormalities can be detected in many ways \cite{medlineplusmedicalencyclopedia2021}. The most common of these methods is to use radiograph, or X-ray, images. Classically, detection of bone abnormalities is completed manually by trained professionals, but with the rise fo computer imaging and classification technologies, automated detection methods are being developed.
+	
+	Many existing methods of abnormality and fracture detection are specific to a specific bone structure. Afzal et al. \cite{mashalafzalmmoazzamjawaidrizwanbadarbalochsanamnarejo2020} develop a model for automatic deformation detection in the elbow. This method locates the radius and ulna in order to profile the intensity along the length of the bone. The bones are detected by segmenting the background and soft-tissue from the bone structures evident in the X-ray, and detecting the capitellum and forearm bones using Canny edge detection, Hough circle detection, and line approximation. The profile of the possibly deformed bones can be compared to that of a healthy bone, and a classification can be made. This method is highly effective, reaching accuracies greater than $80\%$ on the MURA dataset \cite{rajpurkar2017mura}, however the use of the proposed algorithm is highly restrictive since it can only be applied to elbows and the X-ray must be taken from a side-view.
+	
+	Donnelley et al. \cite{donnelleyandknowles} propose a similar method of fracture detection in long bones. The method identifies the long, straight bone segment known as the diaphysis, and detects large gradient changes along the length of the bone as fractures. Additionally, Donnelley et al. make use of the Affine Morphological Scale Space to smooth the image without losing information about the location of boundaries within the image \cite{donnelleyandknowles,amss}. Similarly to Afzal et al. \cite{mashalafzalmmoazzamjawaidrizwanbadarbalochsanamnarejo2020}, the model developed by Donnelley et al. \cite{donnelleyandknowles} is restricted to the type of bones which can be used as input. Additionally, the method only detects fractures in the diaphysis, and not in the bone joints.
+	
+	Dimililer \cite{DIMILILER2017260} takes a more generalised approach at bone abnormality classification by extracting Scale-Invariant Feature Transform (SIFT) \cite{lowe2004distinctive} features of an X-ray image once it has been compressed using the Haar Wavelet transform. These features are used as input to a Back-propagation Neural Network machine learning classifier. This approach, should the model be trained on other bone structures, is able to detect bone abnormalities in other locations. This makes the model flexible in its deployment.
+	
+	Deep-learning methods are also used to detect bone abnormalities. Rajpurkar et al. \cite{rajpurkar2017mura} developed an ensemble of 5 169-layer DenseNet CNNs which are able to detect anomalies in bone structure. This classifier was trained on the MURA dataset \cite{rajpurkar2017mura}, and was shown to have similar performance to radiologists for finger, wrist, and hand X-rays.
+	
+	\subsection{MURA Dataset}
+	
+	The MURA dataset \cite{rajpurkar2017mura} is a large upper extremity X-ray dataset. The dataset consists of X-rays belonging to one of seven upper extremity radiographic study types: elbow, finger, forearm, hand, humerus, shoulder, and wrist. The multi-image labelled studies consist of X-rays from the same patient of the same study type. These studies were labelled manually at the time of clinical radiographic interpretation. This implies that the studies may have been labelled incorrectly by the radiologist. Additionally, the dimensions, position and orientation of the subject within the X-ray cannot be guaranteed. 
+	
+	Each study is labelled either as normal or abnormal. Abnormalities include but are not limited to fractures, hardware, degenerative join diseases, and lesions. 
+	
+	\section{Feature Extraction}
+
+	
+	\section{Classification}
+	
+	\section{Results and Analysis}
+	
+	\section{Conclusion}
+	
+	\clearpage
+	\bibliographystyle{IEEEtran}
+	\bibliography{IEEEabrv,references}
+
+\end{document}

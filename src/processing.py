@@ -31,7 +31,7 @@ def sift_features(img, nfeatures=100):
     if len(kp) > nfeatures: # OpenCV randomly gives nfeatures + 1 features
         while len(kp) > nfeatures:
             kp.pop()
-        desc = desc[:100, :]
+        desc = desc[:nfeatures, :]
     elif len(kp) < nfeatures:
         if desc is None:
             cv.imshow("NONE", img)
@@ -72,7 +72,7 @@ def remove_background(img, show_imgs):
     return img
 
 
-def extract_features(img: np.ndarray, show_imgs:bool = False):
+def extract_features(img: np.ndarray, show_imgs:bool = False, n_SIFT_features=100):
     img = 255-img
     if show_imgs:
         show("IMG", img)
@@ -93,7 +93,7 @@ def extract_features(img: np.ndarray, show_imgs:bool = False):
     if show_imgs:
         show("CANNY", img)
 
-    ret, kp, desc = sift_features(img)
+    ret, kp, desc = sift_features(img, n_SIFT_features)
     if not ret:
         return False, np.empty(1)
     if show_imgs:
@@ -126,7 +126,7 @@ def _calc_features(generator, n_SIFT_features=100):
     for imgs, label in generator:
         features_arr = []
         for img in imgs:
-            ret, f = extract_features(img)
+            ret, f = extract_features(img, n_SIFT_features=n_SIFT_features)
             if ret:
                 features_arr.append(f)
         if len(features_arr)>0:
@@ -171,8 +171,6 @@ def _concat_feature_vectors(features, max_length=None):
         labels.append(l)
     return np.asarray(full_features), np.array(labels)
 
-# def _load_ds(ds_type, xray_type, pca, n_SIFT_features):
-
 def _files_exist(files):
     return all(os.path.isfile(f) for f in files)
 
@@ -195,6 +193,7 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
         valid_features_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_features_sift-'+str(n_SIFT_features)+'.pkl')
         if _files_exist([train_features_path, valid_features_path]):
         # If both files exist, use files to make ds files.
+            print("Creating ds files with n_pca="+str(n_pca)+" n_SIFT_features="+str(n_SIFT_features))
             max_features_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'max_images.pkl')
             if _files_exist([max_features_path]):
                 max_images = utils.read_pickle(max_features_path)
@@ -230,6 +229,7 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
             valid_images_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_images.pkl')
             if _files_exist([train_images_path, valid_images_path]):
             # If both files exist, use files to create feature files.
+                print("Creating feature files with n_SIFT_features="+str(n_SIFT_features))
                 train_images = utils.read_pickle(train_images_path)
                 train_features = _calc_features(train_images, n_SIFT_features)
                 utils.write_pickle(train_features, train_features_path)
@@ -245,6 +245,7 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
                 return load_ds(xray_type, n_pca, n_SIFT_features) 
             else:
             # If either file does not exist, recreate it.
+                print("Creating _images.pkl")
                 train_images = list(get_image_generator('train', xray_type))
                 utils.write_pickle(train_images, train_images_path)
                 del train_images
@@ -254,14 +255,6 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
                 del valid_images
                 gc.collect()
                 return load_ds(xray_type, n_pca, n_SIFT_features)
-                
-
-# def process_ds(generator, max_length=None, pca=None):
-#     features = _calc_features(generator=generator)
-#     if pca is not None: # We want to do PCA on a per image basis
-#         features, pca = _apply_or_fit_PCA(features, pca)
-#     full_features, labels = _concat_feature_vectors(features, max_length)
-#     return full_features, labels, max_length, pca
 
 if __name__ == "__main__":
     train_X, train_Y, valid_X, valid_Y = load_ds(XRAYTYPE.FOREARM, 50, 100)
