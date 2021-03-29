@@ -95,7 +95,7 @@ def sample_next_hyperparameter(acquisition_func, gaussian_process, evaluated_los
 
 
 def bayesian_optimisation(n_iters, sample_loss, bounds, x0=None, n_pre_samples=5,
-                          gp_params=None, random_search=False, alpha=1e-5, epsilon=1e-7):
+                          gp_params=None, random_search=False, alpha=1e-5, epsilon=1e-7, classifier_type='svm'):
     """ bayesian_optimisation
 
     Uses Gaussian Processes to optimise the loss function `sample_loss`.
@@ -128,15 +128,15 @@ def bayesian_optimisation(n_iters, sample_loss, bounds, x0=None, n_pre_samples=5
     y_list = []
 
     n_params = bounds.shape[0]
-
+    print("Creating Pre-samples")
     if x0 is None:
-        for params in np.random.uniform(bounds[:, 0], bounds[:, 1], (n_pre_samples, bounds.shape[0])):
+        for params in tqdm(np.random.uniform(bounds[:, 0], bounds[:, 1], (n_pre_samples, bounds.shape[0]))):
             x_list.append(params)
-            y_list.append(sample_loss(params))
+            y_list.append(sample_loss(params, classifier=classifier_type))
     else:
-        for params in x0:
+        for params in tqdm(x0):
             x_list.append(params)
-            y_list.append(sample_loss(params))
+            y_list.append(sample_loss(params, classifier=classifier_type))
 
     xp = np.array(x_list)
     yp = np.array(y_list)
@@ -151,6 +151,7 @@ def bayesian_optimisation(n_iters, sample_loss, bounds, x0=None, n_pre_samples=5
                                             n_restarts_optimizer=10,
                                             normalize_y=True)
 
+    print("Selecting new points")
     for n in tqdm(range(n_iters)):
 
         model.fit(xp, yp)
@@ -168,7 +169,7 @@ def bayesian_optimisation(n_iters, sample_loss, bounds, x0=None, n_pre_samples=5
             next_sample = np.random.uniform(bounds[:, 0], bounds[:, 1], bounds.shape[0])
 
         # Sample loss for new set of parameters
-        cv_score = sample_loss(next_sample)
+        cv_score = sample_loss(next_sample, classifier=classifier_type)
 
         # Update lists
         x_list.append(next_sample)

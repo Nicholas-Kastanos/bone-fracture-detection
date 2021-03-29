@@ -73,9 +73,9 @@ def remove_background(img, show_imgs):
 
 
 def extract_features(img: np.ndarray, show_imgs:bool = False, n_SIFT_features=100):
-    img = 255-img
     if show_imgs:
         show("IMG", img)
+    img = 255-img
 
     img = blur(img)
     if show_imgs:
@@ -121,12 +121,12 @@ def fill_features(features_arr, length: int):
 def max_len(x):
     return len(x[0])
 
-def _calc_features(generator, n_SIFT_features=100):
+def _calc_features(generator, n_SIFT_features=100, show_imgs=False):
     features = []
     for imgs, label in generator:
         features_arr = []
         for img in imgs:
-            ret, f = extract_features(img, n_SIFT_features=n_SIFT_features)
+            ret, f = extract_features(img, n_SIFT_features=n_SIFT_features, show_imgs=show_imgs)
             if ret:
                 features_arr.append(f)
         if len(features_arr)>0:
@@ -193,7 +193,7 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
         valid_features_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_features_sift-'+str(n_SIFT_features)+'.pkl')
         if _files_exist([train_features_path, valid_features_path]):
         # If both files exist, use files to make ds files.
-            print("Creating ds files with n_pca="+str(n_pca)+" n_SIFT_features="+str(n_SIFT_features))
+            # print("Creating ds files with n_pca="+str(n_pca)+" n_SIFT_features="+str(n_SIFT_features))
             max_features_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'max_images.pkl')
             if _files_exist([max_features_path]):
                 max_images = utils.read_pickle(max_features_path)
@@ -229,7 +229,7 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
             valid_images_path = os.path.join(os.getcwd(), 'data', 'npy_files', str(xray_type.value), 'valid_images.pkl')
             if _files_exist([train_images_path, valid_images_path]):
             # If both files exist, use files to create feature files.
-                print("Creating feature files with n_SIFT_features="+str(n_SIFT_features))
+                # print("Creating feature files with n_SIFT_features="+str(n_SIFT_features))
                 train_images = utils.read_pickle(train_images_path)
                 train_features = _calc_features(train_images, n_SIFT_features)
                 utils.write_pickle(train_features, train_features_path)
@@ -245,7 +245,7 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
                 return load_ds(xray_type, n_pca, n_SIFT_features) 
             else:
             # If either file does not exist, recreate it.
-                print("Creating _images.pkl")
+                # print("Creating _images.pkl")
                 train_images = list(get_image_generator('train', xray_type))
                 utils.write_pickle(train_images, train_images_path)
                 del train_images
@@ -257,4 +257,6 @@ def load_ds(xray_type, n_pca=None, n_SIFT_features=100):
                 return load_ds(xray_type, n_pca, n_SIFT_features)
 
 if __name__ == "__main__":
-    train_X, train_Y, valid_X, valid_Y = load_ds(XRAYTYPE.FOREARM, 50, 100)
+    gen = get_image_generator('valid', XRAYTYPE.FOREARM)
+    _calc_features(gen, show_imgs=True, n_SIFT_features=1400)
+    # train_X, train_Y, valid_X, valid_Y = load_ds(XRAYTYPE.FOREARM, 50, 100)
