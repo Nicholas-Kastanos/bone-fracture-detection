@@ -91,7 +91,7 @@
 	
 	X-ray images contain identifying tags to indicate information about the subject matter, however it does not convey information about the bone structure. Therefore, removal of this `background' area is completed using Otsu's Binarization method \cite{otsu1979threshold}, followed by contour detection of the largest area continuous contour. This method is effective on X-ray images since the background is distinctly different to the foreground, creating an easily detectable trough in the spectral frequency histogram. An example of the foreground image can be seen in Figure~\ref{fig:foreground}
 	
-	Canny edge detection is completed on the foreground image. This creates an image which highlights any edges in the bone structure. The edges of the image show the outline of the image which reveals dislocations and deformations of the bones. Additionally, fractures within the bone are highlighted by the edge detection algorithm, allowing the feature extraction algorithm to easily focus on these areas.
+	Canny edge detection is completed on the foreground image. This creates an image which highlights any edges in the bone structure, revealing dislocations and deformations of the bones. Additionally, fractures within the bone are highlighted by the edge detection algorithm, allowing the feature extraction algorithm to easily focus on these areas.
 	
 	\begin{figure}[t!]
 		\centering
@@ -123,7 +123,7 @@
 	
 	\section{Classification} \label{sec:classifiers}
 	
-	Once the features have been extracted, a model must be developed to complete the classification. Each type of model creates different decision boundaries and learns in different methods resulting if varying strengths and weaknesses. Therefore, the optimal classifier type must be discovered. Three different classifiers are developed and compared to determine which performs the best, and finally a hard-voting classifier is developed using one type of each model.
+	Once the features have been extracted, a model must be developed to complete the classification. Each type of model creates different decision boundaries resulting in models with varying strengths and weaknesses. Therefore, the optimal classifier type must be discovered. Three different classifiers are developed and compared to determine which performs the best, and finally a hard-voting classifier is developed using one type of each model.
 	
 	\subsection{Classification Models}
 	
@@ -229,9 +229,7 @@
 	
 	Further optimisation of the processing stage can be completed. Canny edge detection has inbuilt thresholds, as well as kernel sizes used for blurring and morphology can be optimised. Additionally, the background removal may not be effective. The MURA dataset provides no guarantees that the image only contains the X-ray contents, and visual inspection shows that some samples contain two-colour backgrounds. Additionally, the dataset contains studies where multiple X-rays are included in a single image. These images would cause issues with the algorithm, and should be removed.
 	
-	Further features can be explored, such as Oriented FAST and Rotated BRIEF (ORB) features. ORB features are considered to be a faster and as effective alternative to SIFT. Additionally, using Hough and Fourier transforms can yield additional information.
-	
-	Additionally, evaluation of the models trained on other X-ray types must be conducted to determine whether the methods discussed in this paper are effective on other bone structures.
+	Further features such as Oriented FAST and Rotated BRIEF (ORB) can be explored and compared. Additionally, evaluation of the models trained on other X-ray types must be conducted to determine whether the methods discussed in this paper are effective on other bone structures.
 	
 	\section{Conclusion}
 	
